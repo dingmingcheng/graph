@@ -1,0 +1,102 @@
+/************sap****************/
+
+#include <cstdlib>
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+#include <queue>
+#define INF 0x3fffffff
+#define RE(x) (x)^1
+#define MAXN 1005
+using namespace std;
+
+int lvl[MAXN], gap[MAXN], idx, head[MAXN], sink, source, N, M;
+// lvl用来记录每个节点离汇点的高度，gap数组用来记录高度值为i的个数gap[i]
+
+struct Edge
+{
+	int v, cap, next;
+}e[800010];
+
+void init()
+{
+	idx = -1;
+	memset(head, 0xff, sizeof(head));
+	memset(lvl, 0, sizeof(lvl));
+	memset(gap, 0, sizeof(gap));
+	// 0xff == -1 (对于一个字节来说)
+}
+
+void insert(int a, int b, int c)
+{
+	++idx;
+	e[idx].v = b, e[idx].next = head[a];
+	e[idx].cap = c, head[a] = idx;
+}
+
+int dfs(int u, int flow)
+{
+	if (u == sink) {
+		return flow;
+	}
+	int tf = 0, sf, mlvl = N - 1;
+	for (int i = head[u]; i != -1; i = e[i].next) {
+		if (e[i].cap > 0) { // 只要还有边还有容量的话
+			if (lvl[u] == lvl[e[i].v] + 1) {  // 与dinic不同这个层数是反的
+				sf = dfs(e[i].v, min(flow - tf, e[i].cap));
+				e[i].cap -= sf;
+				e[RE(i)].cap += sf;
+				tf += sf;
+				if (lvl[source] >= N) {
+					// 可能在子递归中出现了断层或者不能再流的现象，这个时候要及时的退出
+					return tf;
+				}
+				if (tf == flow) {
+					break;
+				}
+			}
+			mlvl = min(mlvl, lvl[e[i].v]);
+		}
+	}
+	if (tf == 0) {
+		--gap[lvl[u]];
+		if (!gap[lvl[u]]) {
+			lvl[source] = N;
+		}
+		else {
+			lvl[u] = mlvl + 1;
+			++gap[lvl[u]];
+		}
+	}
+	return tf;
+}
+
+int sap()
+{
+	int ans = 0;
+	gap[0] = N;
+	while (lvl[source] < N) {
+		ans += dfs(source, INF);
+	}
+	return ans;
+}
+
+int main()
+{
+	int T, a, b, c, ca = 0, ans;
+	scanf("%d", &T);
+	while (T--) {
+		init();
+		ans = 0;
+		scanf("%d %d", &N, &M);
+		for (int i = 0; i < M; ++i) {
+			scanf("%d %d %d", &a, &b, &c);
+			insert(a, b, c);
+			insert(b, a, 0);
+		}
+		N=N;
+		sink = N, source = 1;
+		printf("Case %d: %d\n", ++ca, sap());
+	}
+	return 0;
+}

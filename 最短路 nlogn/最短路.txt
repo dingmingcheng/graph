@@ -1,0 +1,113 @@
+/***********×î¶ÌÂ·***************/
+
+#include<stdio.h>
+#include<string.h>
+#include<queue>
+#include<algorithm>
+
+using namespace std;
+
+const int N = 100005;
+const int M = 1000005;
+const int INF = 0x3f3f3f3f;
+
+int n, m;
+
+typedef long long LL;
+
+struct Edge {
+	int v, w, next;
+};
+
+struct Node {
+	int v, w;
+	Node() {};
+	Node(int pv, int pw) :v(pv), w(pw) {};
+	bool operator < (const Node& other)const {
+		return w > other.w;
+	}
+};
+
+Edge edge[(N + M) << 1];
+int fir[N + M];
+int dis[N + M][2];
+int cnt;
+
+void init() {
+	cnt = 0;
+	memset(fir, -1, sizeof(fir));
+}
+
+void addEdge(int u, int v, int w) {
+	edge[cnt].v = v;
+	edge[cnt].w = w;
+	edge[cnt].next = fir[u];
+	fir[u] = cnt++;
+}
+
+void dijkstra(int s, int k) {
+	priority_queue<Node> pque;
+	dis[s][k] = 0;
+	pque.push(Node(s, 0));
+	while (!pque.empty()) {
+		Node cur = pque.top();
+		pque.pop();
+		for (int i = fir[cur.v]; i != -1; i = edge[i].next) {
+			int v = edge[i].v;
+			if (dis[cur.v][k] + edge[i].w < dis[v][k]) {
+				dis[v][k] = dis[cur.v][k] + edge[i].w;
+				pque.push(Node(v, dis[v][k]));
+			}
+		}
+	}
+}
+
+int main() {
+
+	int t;
+	scanf("%d", &t);
+	for (int cas = 1; cas <= t; cas++) 
+	{
+		scanf("%d%d", &n, &m);
+		init();
+		for (int i = 1; i <= m; i++) {
+			int ti, si;
+			scanf("%d%d", &ti, &si);
+			while (si--) {
+				int id;
+				scanf("%d", &id);
+				addEdge(id, i + n, ti);
+				addEdge(i + n, id, 0);
+			}
+		}
+		memset(dis, INF, sizeof(dis));
+		dijkstra(1, 0);
+		dijkstra(n, 1);
+		int ans = INF;
+		for (int i = 1; i <= n; i++) {
+			if (dis[i][0] != INF && dis[i][1] != INF) {
+				ans = min(ans, max(dis[i][0], dis[i][1]));
+			}
+		}
+		if (ans == INF)
+			printf("Case #%d: Evil John\n", cas);
+		else {
+			printf("Case #%d: %d\n", cas, ans);
+			int flag = 1;
+			for (int i = 1; i <= n; i++) {
+				int tmp = max(dis[i][0], dis[i][1]);
+				if (tmp == ans) {
+					if (flag) {
+						flag = 0;
+						printf("%d", i);
+					}
+					else {
+						printf(" %d", i);
+					}
+				}
+			}
+			printf("\n");
+		}
+	}
+	return 0;
+}

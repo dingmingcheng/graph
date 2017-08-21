@@ -1,0 +1,81 @@
+//最小费用最大流模版.求最大费用最大流建图时把费用取负即可。
+//无向边转换成有向边时需要拆分成两条有向边。即两次加边。
+const int maxn = 1010;
+const int maxm = 1000200;
+const int inf = 1000000000;
+struct Edge
+{
+    int v, cap, cost, next;
+}p[maxm << 1];
+int e, sumFlow, n, m, st, en;
+int head[maxn], dis[maxn], pre[maxn];
+bool vis[maxn];
+void init()
+{
+    e=0;
+    memset(head,-1,sizeof(head));
+}
+void addedge(int u,int v,int cap,int cost)
+{
+    p[e].v = v; p[e].cap = cap; p[e].cost = cost;
+    p[e].next = head[u]; head[u] = e++;
+    p[e].v = u; p[e].cap = 0; p[e].cost = - cost;
+    p[e].next = head[v]; head[v] = e++;
+}
+bool spfa(int s,int t, int n)
+{
+    int u,v;
+    queue<int>q;
+    memset(vis,false,sizeof(vis));
+    memset(pre,-1,sizeof(pre));
+    for(int i = 0; i <= n; ++i)
+        dis[i] = inf;
+    vis[s] = true;
+    dis[s] = 0;
+    q.push(s);
+    while(!q.empty())
+    {
+        u = q.front();
+        q.pop();
+        vis[u] = false;
+        for(int i = head[u]; i != -1; i = p[i].next)
+        {
+            v = p[i].v;
+            if(p[i].cap && dis[v] > dis[u] + p[i].cost)
+            {
+                dis[v] = dis[u] + p[i].cost;
+                pre[v] = i;
+                if(!vis[v])
+                {
+                    q.push(v);
+                    vis[v]=true;
+                }
+            }
+        }
+     }
+     if(dis[t] == inf)
+         return false;
+     return true;
+}
+int MCMF(int s,int t,int n)
+{
+    int flow = 0; // 总流量
+    int minflow, mincost;
+    mincost=0;
+    while(spfa(s,t,n))
+    {
+        minflow = inf + 1;
+        for(int i = pre[t]; i != -1; i = pre[p[i^1].v])
+            if(p[i].cap < minflow)
+                minflow = p[i].cap;
+        flow += minflow;
+        for(int i=pre[t];i!=-1;i=pre[p[i^1].v])
+        {
+            p[i].cap -= minflow;
+            p[i^1].cap += minflow;
+        }
+        mincost += dis[t] * minflow;
+    }
+    sumFlow = flow; // 最大流
+    return mincost;
+}

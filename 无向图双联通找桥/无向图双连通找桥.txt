@@ -1,0 +1,109 @@
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+#define MAXN 1000+10
+#define MAXM 1000000+10
+#define INF 10000+10
+using namespace std;
+struct Edge
+{
+    int from, to, val, next, num, cut;
+}edge[MAXM];
+int head[MAXN], top;
+int low[MAXN];
+int dfn[MAXN];//记录点在DFS树中的深度优先数
+int recdfn;
+bool exist;
+void init()
+{
+    top = 0;
+    memset(head, -1, sizeof(head));
+}
+void addEdge(int u, int v, int w)
+{
+    Edge E = {u, v, w, head[u], 0, 0};
+    edge[top] = E;
+    head[u] = top++;
+    Edge E1 = {v, u, w, head[v], 0, 0};
+    edge[top] = E1;
+    head[v] = top++;
+}
+void getMap(int m)
+{
+    int a, b, c;
+    while(m--)
+    {
+        scanf("%d%d%d", &a, &b, &c);
+        addEdge(a, b, c);
+    }
+}
+void tarjan(int u, int fa)
+{
+    low[u] = dfn[u] = ++recdfn;
+    int have  = 0;
+    for(int i = head[u]; i != -1; i = edge[i].next)
+    {
+        int v = edge[i].to;
+        if(!have && v == fa)//重边 一定不是桥  重边有效
+        {
+        	have++;
+        	continue;
+        }
+        if(!dfn[v])
+        {
+            tarjan(v, u);
+            low[u] = min(low[u], low[v]);
+            if(low[v] > dfn[u] && edge[i].num == 0)//u -> v为桥
+            {
+                edge[i].cut = true;
+                edge[i^1].cut = true;
+            }
+        }
+        else low[u] = min(low[u], dfn[v]);
+    }
+}
+void find_edgecut(int l, int r)
+{
+    memset(low, 0, sizeof(low));
+    memset(dfn, 0, sizeof(dfn));
+    exist = true;
+    recdfn = 0;
+    tarjan(l, l);//连通图 只需一次就能遍历完所有的点
+    for(int i = l; i <= r; i++)
+    {
+        if(!dfn[i])//若还存在点没有遍历到 说明图本身就是非连通通图
+        {
+            exist = false;
+            return ;
+        }
+    }
+}
+int main()
+{
+    int N, M;
+    printf("%d\n",1^5);
+    while(scanf("%d%d", &N, &M), N||M)
+    {
+        init();
+        getMap(M);
+        find_edgecut(1, N);
+        if(!exist)
+        printf("0\n");
+        else
+        {
+            int ans = INF;
+            for(int i = 0; i < top; i++)
+            {
+                if(edge[i].cut)
+                ans = min(ans, edge[i].val);
+            }
+            if(ans == INF)//找不到桥
+            printf("-1\n");
+            else if(ans == 0)
+            printf("1\n");//至少需要一个人。。。
+            else
+            printf("%d\n", ans);
+        }
+    }
+    return 0;
+}

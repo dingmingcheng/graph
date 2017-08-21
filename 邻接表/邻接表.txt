@@ -1,0 +1,16 @@
+struct Edge {
+	int v, w, next;
+};
+Edge edge[(N + M) << 1];
+int fir[N + M];//根据情况改变
+int cnt;
+void init() {
+	cnt = 0;
+	memset(fir, -1, sizeof(fir));
+}
+
+void addEdge(int u, int v) {
+	edge[cnt].v = v;
+	edge[cnt].next = fir[u];
+	fir[u] = cnt++;
+}

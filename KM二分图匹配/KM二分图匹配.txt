@@ -1,0 +1,149 @@
+/*************KM二分图匹配*****************/
+#define INF 0xff
+#define N 202
+int useif[N];   //记录y中节点是否使用 0表示没有访问过，1为访问过
+int link[N];   //记录当前与y节点相连的x的节点
+int mat[N][N]; //记录连接x和y的边，如果i和j之间有边则为1，否则为0
+int gn, gm;    //二分图中x和y中点的数目
+int can(int t)
+{
+	int i;
+	for (i = 1;i <= gm;i++)
+	{
+		if (useif[i] == 0 && mat[t][i])
+		{
+			useif[i] = 1;
+			if (link[i] == -1 || can(link[i]))
+			{
+				link[i] = t;//cout << i << endl;
+				return i;
+			}
+		}
+	}
+	return 0;
+}
+int MaxMatch()
+{
+	int i, num;
+	num = 0;
+	memset(link, -1, sizeof(link));
+	for (i = 1;i <= gn;i++)
+	{
+		memset(useif, 0, sizeof(useif));
+		int ans = can(i);
+		if (ans) { num++; }
+	}
+	return num;
+}
+int main()
+{
+	gn = 3;gm = 3;
+	mat[3][1] = 2;
+	mat[3][3] = 1;
+	mat[1][1] = 3;
+	mat[1][2] = 2;
+	mat[2][3] = 3;
+	mat[2][2] = 2;
+	int ans=MaxMatch();
+	printf("%d\n",ans);
+}
+
+#include <iostream>
+#include <cstdio>
+#include <memory.h>
+#include <algorithm> 
+using namespace std;
+#define MAX 100
+int n;
+int weight[MAX][MAX];           //权重
+int lx[MAX], ly[MAX];                //定点标号
+bool sx[MAX], sy[MAX];          //记录寻找增广路时点集x，y里的点是否搜索过
+int match[MAX];                       //match[i]记录y[i]与x[match[i]]相对应
+
+bool search_path(int u) {          //给x[u]找匹配,这个过程和匈牙利匹配是一样的
+	sx[u] = true;
+	for (int v = 0; v<n; v++) {
+		if (!sy[v] && lx[u] + ly[v] == weight[u][v]) {
+			sy[v] = true;
+			if (match[v] == -1 || search_path(match[v])) {
+				match[v] = u;
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+int Kuhn_Munkras(bool max_weight) {
+	if (!max_weight) { //如果求最小匹配，则要将边权取反
+		for (int i = 0;i<n;i++)
+			for (int j = 0;j<n;j++)
+				weight[i][j] = -weight[i][j];
+	}
+	//初始化顶标，lx[i]设置为max(weight[i][j] | j=0,..,n-1 ), ly[i]=0;
+	for (int i = 0;i<n;i++) {
+		ly[i] = 0;
+		lx[i] = -0x7fffffff;
+		for (int j = 0;j<n;j++)
+			if (lx[i]<weight[i][j])
+				lx[i] = weight[i][j];
+	}
+
+	memset(match, -1, sizeof(match));
+	//不断修改顶标，直到找到完备匹配或完美匹配
+	for (int u = 0;u<n;u++) {   //为x里的每一个点找匹配
+		while (1) {
+			memset(sx, 0, sizeof(sx));
+			memset(sy, 0, sizeof(sy));
+			if (search_path(u))       //x[u]在相等子图找到了匹配,继续为下一个点找匹配
+				break;
+			//如果在相等子图里没有找到匹配，就修改顶标，直到找到匹配为止
+			//首先找到修改顶标时的增量inc, min(lx[i] + ly [i] - weight[i][j],inc);,lx[i]为搜索过的点，ly[i]是未搜索过的点,因为现在是要给u找匹配，所以只需要修改找的过程中搜索过的点，增加有可能对u有帮助的边
+			int inc = 0x7fffffff;
+			for (int i = 0;i<n;i++)
+				if (sx[i])
+					for (int j = 0;j<n;j++)
+						if (!sy[j] && ((lx[i] + ly[j] - weight[i][j])<inc))
+							inc = lx[i] + ly[j] - weight[i][j];
+			//找到增量后修改顶标，因为sx[i]与sy[j]都为真，则必然符合lx[i] + ly [j] =weight[i][j]，然后将lx[i]减inc，ly[j]加inc不会改变等式，但是原来lx[i] + ly [j] ！=weight[i][j]即sx[i]与sy[j]最多一个为真，lx[i] + ly [j] 就会发生改变，从而符合等式，边也就加入到相等子图中
+			if (inc == 0)  cout << "fuck!" << endl;
+			for (int i = 0;i<n;i++) {
+				if (sx[i])   //
+					lx[i] -= inc;
+				if (sy[i])
+					ly[i] += inc;
+			}
+		}
+
+	}
+	int sum = 0;
+	for (int i = 0;i<n;i++)
+		if (match[i] >= 0)
+		{
+			sum += weight[match[i]][i];
+			cout << match[i] << endl;
+		}
+
+	if (!max_weight)
+		sum = -sum;
+	return sum;
+
+
+}
+int main() {
+
+	scanf("%d", &n);
+	for (int i = 0;i<n;i++)
+		for (int j = 0;j<n;j++)
+			scanf("%d", &weight[i][j]);
+	printf("%d\n", Kuhn_Munkras(1));
+	system("pause");
+	return 0;
+}
+/*
+3
+3 2 0
+0 2 3
+2 0 1
+*/
+//DAG的最小路径覆盖数=DAG图中的节点数-相应二分图中的最大匹配数.
